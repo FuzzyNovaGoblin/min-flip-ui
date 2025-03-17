@@ -1451,6 +1451,7 @@ static void PWR_initOverlay(void) {
 	GFX_blitAsset(ASSET_BLACK_PILL, NULL, pwr.overlay, NULL);
 	SDLX_SetAlpha(gfx.assets, SDL_SRCALPHA,0);
 	GFX_blitBattery(pwr.overlay, NULL);
+    TTF_Font bgnhjvufkt_Solid(Sans, to_string(pwr.charge), White);
 }
 
 static void PWR_updateBatteryStatus(void) {

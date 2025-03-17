@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "copyright": "c",
+        "*.ipp": "cpp",
+        "*.tcc": "cpp",
+        "fstream": "cpp"
+    }
+}

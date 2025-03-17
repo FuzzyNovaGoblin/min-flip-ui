@@ -71,9 +71,9 @@ static struct VID_Context {
 
 	SDL_Surface* buffer;
 	SDL_Surface* screen;
-	
+
 	GFX_Renderer* blit; // yeesh
-	
+
 	int width;
 	int height;
 	int pitch;
@@ -86,11 +86,11 @@ static int device_pitch;
 static int rotate = 0;
 SDL_Surface* PLAT_initVideo(void) {
 	LOG_info("PLAT_initVideo\n");
-	
+
 	// char* model = getenv("RGXX_MODEL");
 	// is_cubexx = exactMatch("RGcubexx", model);
 	// is_rg34xx = exactMatch("RG34xx", model);
-	
+
 	SDL_version compiled;
 	SDL_version linked;
 	SDL_VERSION(&compiled);
@@ -134,20 +134,20 @@ SDL_Surface* PLAT_initVideo(void) {
 		p = HDMI_PITCH;
 		on_hdmi = 1;
 	}
-	
+
 	SDL_InitSubSystem(SDL_INIT_VIDEO);
 	SDL_ShowCursor(0);
-	
+
 	vid.window   = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w,h, SDL_WINDOW_SHOWN);
 	// LOG_info("window size: %ix%i\n", w,h);
-	
+
 	// SDL_DisplayMode mode;
 	SDL_GetCurrentDisplayMode(0, &mode);
 	LOG_info("Current display mode: %ix%i (%s)\n", mode.w,mode.h, SDL_GetPixelFormatName(mode.format));
 	if (mode.h>mode.w) rotate = 3; // no longer set on 28xx (because of SDL2 rotation patch?)
 	vid.renderer = SDL_CreateRenderer(vid.window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
 	// SDL_RenderSetLogicalSize(vid.renderer, w,h); // TODO: wrong, but without and with the below it's even wrong-er
-	
+
 	// int renderer_width,renderer_height;
 	// SDL_GetRendererOutputSize(vid.renderer, &renderer_width, &renderer_height);
 	// LOG_info("output size: %ix%i\n", renderer_width, renderer_height);
@@ -172,35 +172,35 @@ SDL_Surface* PLAT_initVideo(void) {
 	SDL_RendererInfo info;
 	SDL_GetRendererInfo(vid.renderer, &info);
 	LOG_info("Current render driver: %s\n", info.name);
-	
+
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,"1"); // linear
 	vid.texture = SDL_CreateTexture(vid.renderer,SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, w,h);
 	vid.target	= NULL; // only needed for non-native sizes
-	
+
 	// TODO: doesn't work here
 	// SDL_SetTextureScaleMode(vid.texture, SDL_ScaleModeLinear); // we always start at device size so use linear for better upscaling over hdmi
-	
+
 	// SDL_ScaleMode scale_mode;
 	// SDL_GetTextureScaleMode(vid.texture, &scale_mode);
 	// LOG_info("texture scale mode: %i\n", scale_mode);
-	
+
 	// int format;
 	// int access_;
 	// SDL_QueryTexture(vid.texture, &format, &access_, NULL,NULL);
 	// LOG_info("texture format: %s (streaming: %i)\n", SDL_GetPixelFormatName(format), access_==SDL_TEXTUREACCESS_STREAMING);
-	
+
 	vid.buffer	= SDL_CreateRGBSurfaceFrom(NULL, w,h, FIXED_DEPTH, p, RGBA_MASK_565);
 	vid.screen	= SDL_CreateRGBSurface(SDL_SWSURFACE, w,h, FIXED_DEPTH, RGBA_MASK_565);
 	vid.width	= w;
 	vid.height	= h;
 	vid.pitch	= p;
-	
+
 	device_width	= w;
 	device_height	= h;
 	device_pitch	= p;
-	
+
 	vid.sharpness = SHARPNESS_SOFT;
-	
+
 	return vid.screen;
 }
 
@@ -243,9 +243,9 @@ static int hard_scale = 4; // TODO: base src size, eg. 160x144 can be 4
 
 static void resizeVideo(int w, int h, int p) {
 	if (w==vid.width && h==vid.height && p==vid.pitch) return;
-	
+
 	// TODO: minarch disables crisp (and nn upscale before linear downscale) when native
-	
+
 	if (w>=device_width && h>=device_height) hard_scale = 1;
 	else if (h>=160) hard_scale = 2; // limits gba and up to 2x (seems sufficient for 640x480)
 	else hard_scale = 4;
@@ -255,10 +255,10 @@ static void resizeVideo(int w, int h, int p) {
 	SDL_FreeSurface(vid.buffer);
 	SDL_DestroyTexture(vid.texture);
 	if (vid.target) SDL_DestroyTexture(vid.target);
-	
+
 	SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, vid.sharpness==SHARPNESS_SOFT?"1":"0", SDL_HINT_OVERRIDE);
 	vid.texture = SDL_CreateTexture(vid.renderer,SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, w,h);
-	
+
 	if (vid.sharpness==SHARPNESS_CRISP) {
 		SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, "1", SDL_HINT_OVERRIDE);
 		vid.target = SDL_CreateTexture(vid.renderer,SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_TARGET, w * hard_scale,h * hard_scale);
@@ -325,16 +325,16 @@ static void rgb565_to_rgb888(uint32_t rgb565, uint8_t *r, uint8_t *g, uint8_t *b
 }
 static void updateEffect(void) {
 	if (effect.next_scale==effect.scale && effect.next_type==effect.type && effect.next_color==effect.color) return; // unchanged
-	
+
 	int live_scale = effect.scale;
 	int live_color = effect.color;
 	effect.scale = effect.next_scale;
 	effect.type = effect.next_type;
 	effect.color = effect.next_color;
-	
+
 	if (effect.type==EFFECT_NONE) return; // disabled
 	if (effect.type==effect.live_type && effect.scale==live_scale && effect.color==live_color) return; // already loaded
-	
+
 	char* effect_path;
 	int opacity = 128; // 1 - 1/2 = 50%
 	if (effect.type==EFFECT_LINE) {
@@ -387,18 +387,18 @@ static void updateEffect(void) {
 			opacity = 136; // 1 - 57/121 = ~52%
 		}
 	}
-	
+
 	// LOG_info("effect: %s opacity: %i\n", effect_path, opacity);
 	SDL_Surface* tmp = IMG_Load(effect_path);
 	if (tmp) {
 		if (effect.type==EFFECT_GRID) {
 			if (effect.color) {
 				// LOG_info("dmg color grid...\n");
-			
+
 				uint8_t r,g,b;
 				rgb565_to_rgb888(effect.color,&r,&g,&b);
 				// LOG_info("rgb %i,%i,%i\n",r,g,b);
-				
+
 				uint32_t* pixels = (uint32_t*)tmp->pixels;
 				int width = tmp->w;
 				int height = tmp->h;
@@ -412,7 +412,7 @@ static void updateEffect(void) {
 				}
 			}
 		}
-		
+
 		if (vid.effect) SDL_DestroyTexture(vid.effect);
 		vid.effect = SDL_CreateTextureFromSurface(vid.renderer, tmp);
 		SDL_SetTextureAlphaMod(vid.effect, opacity);
@@ -443,9 +443,9 @@ void PLAT_blitRenderer(GFX_Renderer* renderer) {
 }
 
 void PLAT_flip(SDL_Surface* IGNORED, int ignored) {
-	
+
 	on_hdmi = GetHDMI(); // use settings instead of getInt(HDMI_STATE_PATH)
-	
+
 	if (!vid.blit) {
 		resizeVideo(device_width,device_height,FIXED_PITCH); // !!!???
 		SDL_UpdateTexture(vid.texture,NULL,vid.screen->pixels,vid.screen->pitch);
@@ -454,11 +454,11 @@ void PLAT_flip(SDL_Surface* IGNORED, int ignored) {
 		SDL_RenderPresent(vid.renderer);
 		return;
 	}
-	
+
 	// uint32_t then = SDL_GetTicks();
 	SDL_UpdateTexture(vid.texture,NULL,vid.blit->src,vid.blit->src_p);
 	// LOG_info("blit blocked for %ims (%i,%i)\n", SDL_GetTicks()-then,vid.buffer->w,vid.buffer->h);
-	
+
 	SDL_Texture* target = vid.texture;
 	int x = vid.blit->src_x;
 	int y = vid.blit->src_y;
@@ -474,7 +474,7 @@ void PLAT_flip(SDL_Surface* IGNORED, int ignored) {
 		h *= hard_scale;
 		target = vid.target;
 	}
-	
+
 	SDL_Rect* src_rect = &(SDL_Rect){x,y,w,h};
 	SDL_Rect* dst_rect = &(SDL_Rect){0,0,device_width,device_height};
 	if (vid.blit->aspect==0) { // native or cropped
@@ -488,7 +488,7 @@ void PLAT_flip(SDL_Surface* IGNORED, int ignored) {
 		dst_rect->y = y;
 		dst_rect->w = w;
 		dst_rect->h = h;
-		
+
 		// LOG_info("dst_rect %i,%i %ix%i\n",dst_rect->x,dst_rect->y,dst_rect->w,dst_rect->h);
 	}
 	else if (vid.blit->aspect>0) { // aspect
@@ -507,13 +507,13 @@ void PLAT_flip(SDL_Surface* IGNORED, int ignored) {
 		dst_rect->w = w;
 		dst_rect->h = h;
 	}
-	
+
 	int ox,oy;
 	oy = (device_width-device_height)/2;
 	ox = -oy;
 	if (rotate && !on_hdmi) SDL_RenderCopyEx(vid.renderer,target,src_rect,&(SDL_Rect){ox+dst_rect->x,oy+dst_rect->y,dst_rect->w,dst_rect->h},rotate*90,NULL,SDL_FLIP_NONE);
 	else SDL_RenderCopy(vid.renderer, target, src_rect, dst_rect);
-	
+
 	updateEffect();
 	if (vid.blit && effect.type!=EFFECT_NONE && vid.effect) {
 		// ox = effect.scale - (dst_rect->x % effect.scale);
@@ -524,7 +524,7 @@ void PLAT_flip(SDL_Surface* IGNORED, int ignored) {
 		if (rotate && !on_hdmi) SDL_RenderCopyEx(vid.renderer,vid.effect,&(SDL_Rect){0,0,dst_rect->w,dst_rect->h},&(SDL_Rect){ox+dst_rect->x,oy+dst_rect->y,dst_rect->w,dst_rect->h},rotate*90,NULL,SDL_FLIP_NONE);
 		else SDL_RenderCopy(vid.renderer, vid.effect, &(SDL_Rect){0,0,dst_rect->w,dst_rect->h},dst_rect);
 	}
-	
+
 	// uint32_t then = SDL_GetTicks();
 	SDL_RenderPresent(vid.renderer);
 	// LOG_info("SDL_RenderPresent blocked for %ims\n", SDL_GetTicks()-then);
@@ -535,7 +535,7 @@ int PLAT_supportsOverscan(void) { return 0; }
 
 ///////////////////////////////
 
-// TODO: 
+// TODO:
 #define OVERLAY_WIDTH PILL_SIZE // unscaled
 #define OVERLAY_HEIGHT PILL_SIZE // unscaled
 #define OVERLAY_BPP 4
@@ -564,7 +564,7 @@ void PLAT_getBatteryStatus(int* is_charging, int* charge) {
 	// *is_charging = 0;
 	// *charge = PWR_LOW_CHARGE;
 	// return;
-	
+
 	*is_charging = getInt("/sys/class/power_supply/ac/online");
 
 	int i = getInt("/sys/class/power_supply/battery/capacity");
@@ -587,12 +587,14 @@ void PLAT_enableBacklight(int enable) {
 	if (enable) {
 		putInt(BLANK_PATH, FB_BLANK_UNBLANK); // wake
 		SetBrightness(GetBrightness());
-		putInt(LED_PATH,0);
+		// commented out to restore LED
+		// putInt(LED_PATH,0);
 	}
 	else {
 		putInt(BLANK_PATH, FB_BLANK_POWERDOWN); // sleep
 		SetRawBrightness(0);
-		putInt(LED_PATH,255);
+		// commented out to restore LED
+		// putInt(LED_PATH,255);
 	}
 }
 
@@ -611,7 +613,7 @@ void PLAT_powerOff(void) {
 	// system("cat /dev/zero > /dev/fb0 2>/dev/null");
 	// system("poweroff");
 	// while (1) pause(); // lolwat
-	
+
 	// touch("/tmp/poweroff");
 	// sync();
 	// system("touch /tmp/poweroff && sync");

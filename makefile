@@ -1,6 +1,6 @@
 # MinUI
 
-# NOTE: this runs on the host system (eg. macOS) not in a docker image
+# NOTE: this runs on the host system (eg. linux`) not in a docker image
 # it has to, otherwise we'd be running a docker in a docker and oof
 
 # prevent accidentally triggering a full build with invalid calls
@@ -31,6 +31,8 @@ RELEASE_NAME=$(RELEASE_BASE)-$(RELEASE_DOT)
 export MAKEFLAGS=--no-print-directory
 
 all: setup $(PLATFORMS) special package done
+
+tester: setup linux special package done
 
 shell:
 	make -f makefile.toolchain PLATFORM=$(PLATFORM)
